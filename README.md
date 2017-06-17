@@ -1,4 +1,4 @@
-# qirc
+# quickirc
 
 A nifty python IRC library.
 
@@ -14,4 +14,5 @@ Documentation
 =============
 
 [Wiki](https://github.com/iogf/qirc/wiki)
+
 
