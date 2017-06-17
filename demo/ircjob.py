@@ -4,7 +4,7 @@ from untwisted.iostd import *
 from untwisted.splits import Terminator, logcon
 # The untwisted schedule event.
 from untwisted.timer import Sched
-from qirc import *
+from quickirc import *
 from socket import socket
 # We need it to delay when sending irc commands
 # otherwise we can go down by excess of flood.
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     Sched(INTERVAL, cbck)
 
     core.gear.mainloop()
+
 
 
 

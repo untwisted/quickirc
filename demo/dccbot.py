@@ -7,7 +7,7 @@ from untwisted.network import *
 from untwisted.iostd import *
 from untwisted.splits import Terminator, logcon
 from untwisted.tools import coroutine
-from qirc import *
+from quickirc import *
 from socket import *
 from os.path import getsize, isfile
 
@@ -109,6 +109,7 @@ if __name__ == '__main__':
     # parser = argparser.ArgumentParser()
     main()
     core.gear.mainloop()
+
 
 
 

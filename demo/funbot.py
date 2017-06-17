@@ -1,7 +1,7 @@
 from untwisted.network import xmap, Spin, core
 from untwisted.iostd import CLOSE, LOAD, CONNECT, CONNECT_ERR, Stdout, Stdin, Client, lose
 from untwisted.splits import Terminator, logcon
-from qirc import Irc, send_cmd, send_msg
+from quickirc import Irc, send_cmd, send_msg
 from socket import *
 
 class FunBot(object):
@@ -141,6 +141,7 @@ class FunBot(object):
 
 bot = FunBot('irc.freenode.com', 6667, 'Fourier1', 'kaus keus kius :kous', '', '##calculus')
 core.gear.mainloop()
+
 
 
 

@@ -1,7 +1,7 @@
 from untwisted.network import *
 from untwisted.iostd import Client, Stdin, Stdout, CLOSE, CONNECT, CONNECT_ERR, lose
 from untwisted.splits import Terminator, logcon
-from qirc import Irc, send_cmd
+from quickirc import Irc, send_cmd
 from socket import *
 
 def send_auth(con, nick, user):
@@ -41,6 +41,7 @@ for ind in NICK_LIST:
     connect('irc.freenode.org', 6667, ind, 'ae eu de :uxirc', '#vy')
 
 core.gear.mainloop()
+
 
 
 

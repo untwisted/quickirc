@@ -1,60 +1,61 @@
 ##############################################################################
-# push, qirc, github.
-cd ~/projects/qirc-code
+# push, quickirc, github.
+cd ~/projects/quickirc-code
 git status
 git add *
 git commit -a
 git push 
 ##############################################################################
-# create the develop branch, qirc.
+# create the develop branch, quickirc.
 git branch -a
 git checkout -b development
 git push --set-upstream origin development
 ##############################################################################
-# merge master into development, qirc.
-cd ~/projects/qirc-code
+# merge master into development, quickirc.
+cd ~/projects/quickirc-code
 git checkout development
 git merge master
 git push
 ##############################################################################
-# merge development into master, qirc.
-cd ~/projects/qirc-code
+# merge development into master, quickirc.
+cd ~/projects/quickirc-code
 git checkout master
 git merge development
 git push
 git checkout development
 ##############################################################################
-# check diffs, qirc.
-cd ~/projects/qirc-code
+# check diffs, quickirc.
+cd ~/projects/quickirc-code
 git diff
 ##############################################################################
-# delete the development branch, qirc.
+# delete the development branch, quickirc.
 git branch -d development
 git push origin :development
 git fetch -p 
 ##############################################################################
-# undo, changes, qirc, github.
-cd ~/projects/qirc-code
+# undo, changes, quickirc, github.
+cd ~/projects/quickirc-code
 git checkout *
 ##############################################################################
-# install, qirc.
+# install, quickirc.
 sudo bash -i
-cd /home/tau/projects/qirc-code
+cd /home/tau/projects/quickirc-code
 python2 setup.py install
 rm -fr build
 exit
 ##############################################################################
-# build, qirc, package, disutils.
-cd /home/tau/projects/qirc-code
+# build, quickirc, package, disutils.
+cd /home/tau/projects/quickirc-code
 python2.6 setup.py sdist 
 rm -fr dist
 rm MANIFEST
 ##############################################################################
-# share, put, place, host, package, python, pip, application, qirc.
+# share, put, place, host, package, python, pip, application, quickirc.
 
-cd ~/projects/qirc-code
+cd ~/projects/quickirc-code
 python2 setup.py sdist register upload
 rm -fr dist
 ##############################################################################
+
 
 
