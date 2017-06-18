@@ -1,4 +1,4 @@
-# quickirc
+# Quickirc
 
 A nifty python IRC library.
 
