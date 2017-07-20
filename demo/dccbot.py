@@ -83,8 +83,9 @@ def send_file(con, nick, user, host, target, msg):
     request = HEADER % (filename, ip_to_long(con.myaddr), port, size)
     send_msg(con, nick, request)
 
-def check_file_existence(con, (nick, user, host, target, msg), 
+def check_file_existence(con, xxx_todo_changeme, 
                                         filename, address, port, size):
+    (nick, user, host, target, msg) = xxx_todo_changeme
     resource = '%s/%s' % (FOLDER, filename) 
     if isfile(resource):      
         send_msg(con, nick, 'File already exists.')
@@ -109,6 +110,7 @@ if __name__ == '__main__':
     # parser = argparser.ArgumentParser()
     main()
     core.gear.mainloop()
+
 
 
 

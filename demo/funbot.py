@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from untwisted.network import xmap, Spin, core
 from untwisted.iostd import CLOSE, LOAD, CONNECT, CONNECT_ERR, Stdout, Stdin, Client, lose
 from untwisted.splits import Terminator, logcon
@@ -87,57 +89,57 @@ class FunBot(object):
 
     def on_ping(self, con, prefix, servaddr):
         # If we do not need pong we are disconnected.
-        print 'on_ping', (prefix, servaddr)
+        print('on_ping', (prefix, servaddr))
         reply = 'PONG :%s\r\n' % servaddr
         send_cmd(con, reply)
         
     def on_join(self, con, nick, user, host, chan):
-        print 'on_join\n', (nick, user, host, chan)
+        print('on_join\n', (nick, user, host, chan))
 
     def on_part(self, con, nick, user, host, chan):
-        print 'on_part\n', (nick, user, host, chan)
+        print('on_part\n', (nick, user, host, chan))
 
     def on_privmsg(self, con, nick, user, host, target, msg):
-        print 'on_privmsg\n', (nick, user, host, target, msg)
+        print('on_privmsg\n', (nick, user, host, target, msg))
 
     def on_332(self, con, prefix, nick, chan, topic):
-        print 'on_332\n', (prefix, nick, chan, topic)
+        print('on_332\n', (prefix, nick, chan, topic))
 
     def on_302(self, con, prefix, nick, info):
-        print 'on_302\n', (prefix, nick, info)
+        print('on_302\n', (prefix, nick, info))
 
     def on_333(self, con, prefix, nick_a, chan,  nick_b, ident):
-        print 'on_333\n', (prefix, nick_a, chan, nick_b, ident)
+        print('on_333\n', (prefix, nick_a, chan, nick_b, ident))
 
     def on_353(self, con, prefix, nick, mode, chan, peers):
-        print 'on_353\n', (prefix, nick, mode, chan, peers)
+        print('on_353\n', (prefix, nick, mode, chan, peers))
 
     def on_366(self, con, prefix, nick, chan, msg):
-        print 'on_366\n', (prefix, nick, chan, msg)
+        print('on_366\n', (prefix, nick, chan, msg))
 
     def on_474(self, con, prefix, nick, chan, msg):
-        print 'on_474\n', (prefix, nick, chan, msg)
+        print('on_474\n', (prefix, nick, chan, msg))
 
     def on_376(self, con, prefix, nick, msg):
-        print 'on_376\n', (prefix, nick, msg)
+        print('on_376\n', (prefix, nick, msg))
 
     def on_notice(self, con, prefix, nick, msg, *args):
-        print 'on_notice\n', (prefix, nick, msg), args
+        print('on_notice\n', (prefix, nick, msg), args)
 
     def on_001(self, con, prefix, nick, msg):
-        print 'on_001\n', (prefix, nick, msg)
+        print('on_001\n', (prefix, nick, msg))
 
     def on_002(self, con, prefix, nick, msg):
-        print 'on_002\n', (prefix, nick, msg)
+        print('on_002\n', (prefix, nick, msg))
 
     def on_003(self, con, prefix, nick, msg):
-        print 'on_004\n', (prefix, nick, msg)
+        print('on_004\n', (prefix, nick, msg))
 
     def on_004(self, con, prefix, nick, *args):
-        print 'on_004\n', (prefix, nick, args)
+        print('on_004\n', (prefix, nick, args))
     
     def on_005(self, con, prefix, nick, *args):
-        print 'on_005', (prefix, nick, args)
+        print('on_005', (prefix, nick, args))
 
 bot = FunBot('irc.freenode.com', 6667, 'Fourier1', 'kaus keus kius :kous', '', '##calculus')
 core.gear.mainloop()

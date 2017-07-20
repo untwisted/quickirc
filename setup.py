@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 setup(name="quickirc",
-      version="1.0.0",
+      version="1.1.0",
       py_modules=["quickirc"],
       author="Iury O. G. Figueiredo",
       author_email="ioliveira@id.uff.br",
@@ -11,6 +11,7 @@ setup(name="quickirc",
       keywords=['untwisted', 'irc', 'protocol', 'library'],
       classifiers=[],
       description="A nifty python IRC library.",)
+
 
 
 

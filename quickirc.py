@@ -19,8 +19,8 @@ RFC_STR        = "^(:(?P<prefix>[^ ]+) +)?(?P<command>[^ ]+)( *(?P<arguments> .+
 RFC_REG        = re.compile(RFC_STR)
 PREFIX_STR     = "(?P<nick>.+)!(?P<user>.+)@(?P<host>.+)"
 PREFIX_REG     = re.compile(PREFIX_STR)
-PRIVMSG_HEADER = 'PRIVMSG %s :%s\r\n'
-CMD_HEADER = '%s\r\n'
+PRIVMSG_HEADER = b'PRIVMSG %s :%s\r\n'
+CMD_HEADER     = b'%s\r\n'
 
 class DccServer(Dispatcher):
     """ 
@@ -125,10 +125,11 @@ class DccClient(Dispatcher):
         spawn(self, DONE)
 
 class Irc(object):
-    def __init__(self, spin):
+    def __init__(self, spin, encoding='utf8'):
         """ 
         Install the protocol inside a Spin instance. 
         """
+        self.encoding = encoding
         xmap(spin, Terminator.FOUND, self.main)
 
     def main(self, spin, data):
@@ -136,7 +137,7 @@ class Irc(object):
         The function which uses irc rfc regex to extract
         the basic arguments from the msg.
         """
-
+        data  = data.decode(self.encoding)
         field = re.match(RFC_REG, data)
         
         if not field:
@@ -266,26 +267,13 @@ class Misc(object):
     def on_mode(self, spin, nick, user, host, chan='', mode='', target=''):
         spawn(spin, 'MODE->%s' % chan, nick, user, host, mode, target)
 
-def send_msg(server, target, msg):
+def send_msg(server, target, msg, encoding='utf8'):
     for ind in wrap(msg, width=512):
-        server.dump(PRIVMSG_HEADER % (target, ind))
+        server.dump(PRIVMSG_HEADER % (target.encode(
+            encoding), ind.encode(encoding)))
 
-def send_cmd(server, cmd):
-    server.dump(CMD_HEADER % cmd)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def send_cmd(server, cmd, encoding='utf8'):
+    server.dump(CMD_HEADER % cmd.encode(encoding))
 
 
 

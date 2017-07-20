@@ -42,13 +42,14 @@ def main(address, port, nick, user, cmd, delay=1):
 
 if __name__ == '__main__':
     USER     = 'uxirc beta gama :uxirc'
-    NICK     = 'alpha'
+    NICK     = 'alphaaa'
     CMD      = ('JOIN #vy','PRIVMSG #vy :Uriel', 'quit')
-    INTERVAL = 10
+    INTERVAL = 20
     cbck     = lambda :main('irc.freenode.com', 6667, NICK, USER, CMD)
     Sched(INTERVAL, cbck)
 
     core.gear.mainloop()
+
 
 
 
