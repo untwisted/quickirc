@@ -5,15 +5,16 @@ A nifty python IRC library.
 Install
 =======
 
-quickirc depends on python2.
+quickirc should work with both python2 and python3.
 
-    pip2 install -r requirements.txt
-    pip2 install quickirc
+    pip install -r requirements.txt
+    pip install quickirc
 
 Documentation
 =============
 
 [Wiki](https://github.com/iogf/qirc/wiki)
+
 
 
 
