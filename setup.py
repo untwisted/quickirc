@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 setup(name="quickirc",
-      version="1.1.1",
+      version="1.2.0",
       py_modules=["quickirc"],
       author="Iury O. G. Figueiredo",
       author_email="ioliveira@id.uff.br",
