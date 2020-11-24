@@ -3,13 +3,18 @@
 """
 
 # We import the basic modules.
-from untwisted.network import *
-from untwisted.iostd import *
+from untwisted.network import SuperSocket
+from untwisted.sock_writer import SockWriter
+from untwisted.sock_reader import SockReader
+from untwisted.client import Client, lose
 from untwisted.splits import Terminator, logcon
 from untwisted.tools import coroutine
-from quickirc import *
-from socket import *
+from untwisted.event import CLOSE, ACCEPT_ERR, CONNECT, CONNECT_ERR, DONE, TIMEOUT
+from untwisted.iputils import ip_to_long, long_to_ip
+from quickirc import Irc, CTCP, send_cmd, DccServer, send_msg, DccClient
+from socket import SOCK_STREAM, AF_INET, socket
 from os.path import getsize, isfile
+from untwisted import core
 
 ADDRESS = 'irc.freenode.org'
 PORT = 6667
@@ -28,19 +33,19 @@ def get_myaddr(con, prefix, nick, msg):
     con.myaddr  = myaddr
 
 def setup(con):
-    Stdin(con)
-    Stdout(con)
+    SockWriter(con)
+    SockReader(con)
     Terminator(con)
     Irc(con)
     CTCP(con)
 
-    xmap(con, 'PING', lambda con, prefix, servaddr: send_cmd(con, 'PONG :%s' % servaddr))
-    xmap(con, '376', lambda con, *args: send_cmd(con, 'JOIN #ameliabot'))
+    con.add_map('PING', lambda con, prefix, servaddr: send_cmd(con, 'PONG :%s' % servaddr))
+    con.add_map('376', lambda con, *args: send_cmd(con, 'JOIN #ameliabot'))
 
-    xmap(con, 'PRIVMSG', send_file)
-    xmap(con, 'DCC SEND', check_file_existence)
-    xmap(con, '376', get_myaddr)
-    xmap(con, CLOSE, lambda con, err: lose(con))
+    con.add_map('PRIVMSG', send_file)
+    con.add_map('DCC SEND', check_file_existence)
+    con.add_map('376', get_myaddr)
+    con.add_map(CLOSE, lambda con, err: lose(con))
 
     logcon(con)
 
@@ -49,11 +54,11 @@ def setup(con):
 
 def main():
     sock = socket(AF_INET, SOCK_STREAM)
-    con  = Spin(sock)
+    con  = SuperSocket(sock)
 
     Client(con)
     con.connect_ex((ADDRESS, PORT))
-    xmap(con, CONNECT, setup) 
+    con.add_map(CONNECT, setup) 
 
 def send_file(con, nick, user, host, target, msg):
     if not msg.startswith('.send'): 
@@ -74,10 +79,10 @@ def send_file(con, nick, user, host, target, msg):
         is_done('Couldnt list on the port!')
         raise
 
-    xmap(dcc, DONE, lambda *args: is_done('Done.'))
-    xmap(dcc, CLOSE, lambda *args: is_done('Failed!'))
-    xmap(dcc, ACCEPT_ERR, lambda *args: is_done("Accept error!"))
-    xmap(dcc, TIMEOUT, lambda *args: is_done('TIMEOUT!'))    
+    dcc.add_map(DONE, lambda *args: is_done('Done.'))
+    dcc.add_map(CLOSE, lambda *args: is_done('Failed!'))
+    dcc.add_map(ACCEPT_ERR, lambda *args: is_done("Accept error!"))
+    dcc.add_map(TIMEOUT, lambda *args: is_done('TIMEOUT!'))    
 
     HEADER  = '\001DCC SEND %s %s %s %s\001' 
     request = HEADER % (filename, ip_to_long(con.myaddr), port, size)
@@ -101,9 +106,9 @@ def recv_file(con, nick, resource, address, port, size):
         send_msg(con, nick, msg)
         fd.close()
 
-    xmap(dcc, DONE, lambda *args: is_done('Done!'))
-    xmap(dcc, CLOSE, lambda *args: is_done('Failed!'))
-    xmap(dcc, CONNECT_ERR, lambda *args: is_done("It couldn't connect!"))
+    dcc.add_map(DONE, lambda *args: is_done('Done!'))
+    dcc.add_map(CLOSE, lambda *args: is_done('Failed!'))
+    dcc.add_map(CONNECT_ERR, lambda *args: is_done("It couldn't connect!"))
 
 if __name__ == '__main__':
     # import argparser

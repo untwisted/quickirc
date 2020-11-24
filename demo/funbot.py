@@ -1,10 +1,12 @@
-from __future__ import print_function
-from builtins import object
-from untwisted.network import xmap, Spin, core
-from untwisted.iostd import CLOSE, LOAD, CONNECT, CONNECT_ERR, Stdout, Stdin, Client, lose
-from untwisted.splits import Terminator, logcon
+from untwisted.network import SuperSocket
+from untwisted.sock_writer import SockWriter
+from untwisted.sock_reader import SockReader
+from untwisted.client import Client, lose
+from untwisted.event import CLOSE, CONNECT, CONNECT_ERR
+from untwisted.splits import Terminator
 from quickirc import Irc, send_cmd, send_msg
-from socket import *
+from untwisted import core
+from socket import socket, AF_INET, SOCK_STREAM
 
 class FunBot(object):
     """ Bot class """
@@ -12,10 +14,10 @@ class FunBot(object):
         """ It sets up the bot instance. """
         sock = socket(AF_INET, SOCK_STREAM)
 
-        # We have to wrap our socket with a Spin instance
+        # We have to wrap our socket with a SuperSocket instance
         # in order to have our events issued when data comes
         # from the socket.
-        con = Spin(sock)
+        con = SuperSocket(sock)
         
         # This protocol is required by uxirc.irc protocol.
         # It spawns CONNECT.
@@ -35,48 +37,45 @@ class FunBot(object):
 
         # It maps CONNECT to self.send_auth so
         # when our socket connects it sends NICK and USER info.
-        xmap(con, CONNECT, self.send_auth)
-        xmap(con, CONNECT_ERR, lambda con, err: lose(con))
+        con.add_map(CONNECT, self.send_auth)
+        con.add_map(CONNECT_ERR, lambda con, err: lose(con))
 
     def send_auth(self, con):
         # It is what we use to send data. send_msg function uses
-        # spin.dump function to dump commands.
-        Stdin(con)
-
-        # Shrug protocols requires Stdout that spawns LOAD
-        # when data arrives. 
-        Stdout(con)
+        # ssock.dump function to dump commands.
+        SockWriter(con)
+        SockReader(con)
 
         # This protocol spawns FOUND whenever it finds \r\n.
         Terminator(con)
 
         Irc(con)
         
-        xmap(con, CLOSE, lambda con, err: lose(con))
+        con.add_map(CLOSE, lambda con, err: lose(con))
 
         # Now, it basically means: when it '376' irc command is
         # issued by the server then calls self.auto_join.
         # We use auto_join to send the sequence of JOIN
         # commands in order to join channels.
-        xmap(con, '376', self.auto_join)
+        con.add_map('376', self.auto_join)
 
         # Below the remaining stuff follows the same pattern.
-        xmap(con, 'JOIN', self.on_join)
-        xmap(con, 'PING', self.on_ping)
-        xmap(con, 'PART', self.on_part)
-        xmap(con, '376', self.on_376)
-        xmap(con, 'NOTICE', self.on_notice)
-        xmap(con, 'PRIVMSG', self.on_privmsg)
-        xmap(con, '332', self.on_332)
-        xmap(con, '001', self.on_001)
-        xmap(con, '001', self.on_002)
-        xmap(con, '003', self.on_003)
-        xmap(con, '004', self.on_004)
-        xmap(con, '333', self.on_333)
-        xmap(con, '353', self.on_353)
-        xmap(con, '366', self.on_366)
-        xmap(con, '474', self.on_474)
-        xmap(con, '302', self.on_302)
+        con.add_map('JOIN', self.on_join)
+        con.add_map('PING', self.on_ping)
+        con.add_map('PART', self.on_part)
+        con.add_map('376', self.on_376)
+        con.add_map('NOTICE', self.on_notice)
+        con.add_map('PRIVMSG', self.on_privmsg)
+        con.add_map('332', self.on_332)
+        con.add_map('001', self.on_001)
+        con.add_map('001', self.on_002)
+        con.add_map('003', self.on_003)
+        con.add_map('004', self.on_004)
+        con.add_map('333', self.on_333)
+        con.add_map('353', self.on_353)
+        con.add_map('366', self.on_366)
+        con.add_map('474', self.on_474)
+        con.add_map('302', self.on_302)
 
 
         send_cmd(con, 'NICK %s' % self.nick)

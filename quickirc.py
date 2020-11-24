@@ -4,7 +4,7 @@
 from untwisted.event import TIMEOUT, DONE, ACCEPT, CLOSE, \
 CONNECT, CONNECT_ERR, LOAD, DUMPED
 from untwisted.splits import Terminator, Fixed
-from untwisted.network import Spin
+from untwisted.network import SuperSocket
 from untwisted.client import Client, lose
 from untwisted.dispatcher import Dispatcher
 from untwisted.sock_writer import SockWriter
@@ -40,7 +40,7 @@ class DccServer(Dispatcher):
         sock = socket(AF_INET, SOCK_STREAM)
         sock.bind(('', port))
         sock.listen(1)
-        self.local = Spin(sock)
+        self.local = SuperSocket(sock)
         Server(self.local)
 
         Dispatcher.__init__(self)
@@ -55,33 +55,33 @@ class DccServer(Dispatcher):
         self.drive(TIMEOUT)
         lose(self.local)
 
-    def on_accept(self, local, spin):
+    def on_accept(self, local, ssock):
         """
         """
 
-        SockReader(spin)
-        SockWriter(spin)
-        Fixed(spin)
+        SockReader(ssock)
+        SockWriter(ssock)
+        Fixed(ssock)
 
-        spin.dumpfile(self.fd)
+        ssock.dumpfile(self.fd)
 
-        spin.add_map(CLOSE, lambda con, err: lose(con)) 
-        spin.add_map(Fixed.FOUND, self.on_ack) 
-        spin.add_handle(lambda spin, event, args: self.drive(event, spin, *args))
+        ssock.add_map(CLOSE, lambda con, err: lose(con)) 
+        ssock.add_map(Fixed.FOUND, self.on_ack) 
+        ssock.add_handle(lambda ssock, event, args: self.drive(event, ssock, *args))
         self.timer.cancel()
 
-    def on_ack(self, spin, ack):
+    def on_ack(self, ssock, ack):
         """
         """
         pos = unpack("!I", ack)[0]
 
         if pos >= self.fd.tell(): 
-            self.run_done(spin)
+            self.run_done(ssock)
 
-    def run_done(self, spin):
-        lose(spin)
+    def run_done(self, ssock):
+        lose(ssock)
         lose(self.local)
-        spin.drive(DONE)
+        ssock.drive(DONE)
 
 class DccClient(Dispatcher):
     def __init__(self, host, port, fd, size):
@@ -90,51 +90,51 @@ class DccClient(Dispatcher):
         Dispatcher.__init__(self)
 
         sock      = socket(AF_INET, SOCK_STREAM)
-        spin      = Spin(sock)
+        ssock      = SuperSocket(sock)
         self.port = port
         self.fd   = fd
         self.size = size
         
-        Client(spin)
-        spin.connect_ex((host, port))
+        Client(ssock)
+        ssock.connect_ex((host, port))
    
-        spin.add_map(CONNECT, self.on_connect) 
-        spin.add_map(CONNECT_ERR, lambda con, err: lose(con)) 
+        ssock.add_map(CONNECT, self.on_connect) 
+        ssock.add_map(CONNECT_ERR, lambda con, err: lose(con)) 
 
-        spin.add_handle(lambda spin, event, args: self.drive(event, spin, *args))
+        ssock.add_handle(lambda ssock, event, args: self.drive(event, ssock, *args))
 
-    def on_connect(self, spin):
+    def on_connect(self, ssock):
         """
         """
 
-        SockReader(spin)
-        SockWriter(spin)
-        spin.add_map(LOAD, self.on_load) 
-        spin.add_map(CLOSE, lambda con, err: lose(con)) 
+        SockReader(ssock)
+        SockWriter(ssock)
+        ssock.add_map(LOAD, self.on_load) 
+        ssock.add_map(CLOSE, lambda con, err: lose(con)) 
 
-    def on_load(self, spin, data):
+    def on_load(self, ssock, data):
         """
         """
 
         self.fd.write(data)
-        spin.dump(pack('!I', self.fd.tell()))
+        ssock.dump(pack('!I', self.fd.tell()))
 
         if self.fd.tell() >= self.size:
-            spin.add_map(DUMPED, self.run_done)
+            ssock.add_map(DUMPED, self.run_done)
 
-    def run_done(self, spin):
-        lose(spin)
+    def run_done(self, ssock):
+        lose(ssock)
         self.sdrive(DONE)
 
 class Irc(object):
-    def __init__(self, spin, encoding='utf8'):
+    def __init__(self, ssock, encoding='utf8'):
         """ 
-        Install the protocol inside a Spin instance. 
+        Install the protocol inside a SuperSocket instance. 
         """
         self.encoding = encoding
-        spin.add_map(Terminator.FOUND, self.main)
+        ssock.add_map(Terminator.FOUND, self.main)
 
-    def main(self, spin, data):
+    def main(self, ssock, data):
         """ 
         The function which uses irc rfc regex to extract
         the basic arguments from the msg.
@@ -148,7 +148,7 @@ class Irc(object):
         prefix  = self.extract_prefix(field.group('prefix'))
         command = field.group('command').upper()
         args    = self.extract_args(field.group('arguments'))
-        spin.drive(command, *(prefix + args))
+        ssock.drive(command, *(prefix + args))
     
     def extract_prefix(self, prefix):
         """ 
@@ -174,16 +174,16 @@ class Irc(object):
         return tuple(args)    
     
 class CTCP(object):
-    def __init__(self, spin):
+    def __init__(self, ssock):
         """ 
-        It installs the subprotocol inside a Spin
+        It installs the subprotocol inside a SuperSocket
         instance.
         """
-        spin.add_map('PRIVMSG', self.extract_ctcp)
+        ssock.add_map('PRIVMSG', self.extract_ctcp)
     
-        spin.add_map('DCC', self.patch)
+        ssock.add_map('DCC', self.patch)
     
-    def extract_ctcp(self, spin, nick, user, host, target, msg):
+    def extract_ctcp(self, ssock, nick, user, host, target, msg):
         """ 
         it is used to extract ctcp requests into pieces.
         """
@@ -196,78 +196,78 @@ class CTCP(object):
     
         ctcp_args = msg.strip(DELIM).split(' ') 
         
-        spin.drive(ctcp_args[0], (nick, user, host,  target, msg), *ctcp_args[1:])
+        ssock.drive(ctcp_args[0], (nick, user, host,  target, msg), *ctcp_args[1:])
     
-    def patch(self, spin, header, *args):
+    def patch(self, ssock, header, *args):
         """ 
         It spawns DCC TYPE as event. 
         """
 
-        spin.drive('DCC %s' % args[0], header, *args[1:])
+        ssock.drive('DCC %s' % args[0], header, *args[1:])
     
 
 class Misc(object):
-    def __init__(self, spin):
-        spin.add_map('001', self.on_001)
-        spin.add_map('PRIVMSG', self.on_privmsg)
-        spin.add_map('JOIN', self.on_join)
-        spin.add_map('PART', self.on_part)
-        spin.add_map('353', self.on_353)
-        spin.add_map('332', self.on_332)
-        spin.add_map('NICK', self.on_nick)
-        spin.add_map('KICK', self.on_kick)
-        spin.add_map('MODE', self.on_mode)
+    def __init__(self, ssock):
+        ssock.add_map('001', self.on_001)
+        ssock.add_map('PRIVMSG', self.on_privmsg)
+        ssock.add_map('JOIN', self.on_join)
+        ssock.add_map('PART', self.on_part)
+        ssock.add_map('353', self.on_353)
+        ssock.add_map('332', self.on_332)
+        ssock.add_map('NICK', self.on_nick)
+        ssock.add_map('KICK', self.on_kick)
+        ssock.add_map('MODE', self.on_mode)
 
         self.nick = ''
 
-    def on_privmsg(self, spin, nick, user, host, target, msg):
-        spin.drive('PRIVMSG->%s' % target.lower(), nick, user, host, msg)
-        spin.drive('PRIVMSG->%s' % nick.lower(), target, user, host, msg)
+    def on_privmsg(self, ssock, nick, user, host, target, msg):
+        ssock.drive('PRIVMSG->%s' % target.lower(), nick, user, host, msg)
+        ssock.drive('PRIVMSG->%s' % nick.lower(), target, user, host, msg)
 
         if target.startswith('#'):
-            spin.drive('CMSG', nick, user, host, target, msg)
+            ssock.drive('CMSG', nick, user, host, target, msg)
         elif self.nick.lower() == target.lower():
-            spin.drive('PMSG', nick, user, host, target, msg)
+            ssock.drive('PMSG', nick, user, host, target, msg)
         
-    def on_join(self, spin, nick, user, host, chan):
+    def on_join(self, ssock, nick, user, host, chan):
         if self.nick == nick: 
-            spin.drive('*JOIN', chan)
+            ssock.drive('*JOIN', chan)
         else:
-            spin.drive('JOIN->%s' % chan, nick, 
+            ssock.drive('JOIN->%s' % chan, nick, 
                   user, host)
     
-    def on_353(self, spin, prefix, nick, mode, chan, peers):
-        spin.drive('353->%s' % chan, prefix, 
+    def on_353(self, ssock, prefix, nick, mode, chan, peers):
+        ssock.drive('353->%s' % chan, prefix, 
               nick, mode, peers)
     
-    def on_332(self, spin, addr, nick, channel, msg):
-        spin.drive('332->%s' % channel, addr, nick, msg)
+    def on_332(self, ssock, addr, nick, channel, msg):
+        ssock.drive('332->%s' % channel, addr, nick, msg)
     
-    def on_part(self, spin, nick, user, host, chan, msg=''):
-        spin.drive('PART->%s' % chan, nick, 
+    def on_part(self, ssock, nick, user, host, chan, msg=''):
+        ssock.drive('PART->%s' % chan, nick, 
               user, host, msg)
     
         if self.nick == nick: 
-            spin.drive('*PART->%s' % chan, user, host, msg)
+            ssock.drive('*PART->%s' % chan, user, host, msg)
     
-    def on_001(self, spin, address, nick, *args):
+    def on_001(self, ssock, address, nick, *args):
         self.nick = nick
     
-    def on_nick(self, spin, nicka, user, host, nickb):
+    def on_nick(self, ssock, nicka, user, host, nickb):
         if not self.nick == nicka: 
             return
     
         self.nick = nickb;
-        spin.drive('*NICK', nicka, user, host, nickb)
+        ssock.drive('*NICK', nicka, user, host, nickb)
 
-    def on_kick(self, spin, nick, user, host, chan, target, msg=''):
-        spin.drive('KICK->%s' % chan, nick, user, host, target, msg)
+    def on_kick(self, ssock, nick, user, host, chan, target, msg=''):
+        ssock.drive('KICK->%s' % chan, nick, user, host, target, msg)
 
         if self.nick == target:
-            spin.drive('*KICK->%s' % chan, nick, user, host, target, msg)
+            ssock.drive('*KICK->%s' % chan, nick, user, host, target, msg)
 
-    def on_mode(self, spin, nick, user, host, chan='', mode='', target=''):
-        spin.drive('MODE->%s' % chan, nick, user, host, mode, target)
+    def on_mode(self, ssock, nick, user, host, chan='', mode='', target=''):
+        ssock.drive('MODE->%s' % chan, nick, user, host, mode, target)
 
 def send_msg(server, target, msg, encoding='utf8'):
     for ind in wrap(msg, width=512):

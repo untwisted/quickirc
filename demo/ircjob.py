@@ -1,43 +1,43 @@
-# It imports basic untwisted objects.
-from untwisted.network import *
-from untwisted.iostd import *
-from untwisted.splits import Terminator, logcon
-# The untwisted schedule event.
+from untwisted.network import SuperSocket
+from untwisted.sock_writer import SockWriter
+from untwisted.sock_reader import SockReader
+from untwisted.client import Client, lose
 from untwisted.timer import Sched
-from quickirc import *
-from socket import socket
-# We need it to delay when sending irc commands
-# otherwise we can go down by excess of flood.
+from quickirc import Irc, send_cmd
+from untwisted.splits import Terminator, logcon
+from socket import socket, AF_INET, SOCK_STREAM
+from untwisted.event import CLOSE, CONNECT, CONNECT_ERR
+from untwisted import core
 from time import sleep
 
 
 def send_auth(con, nick, user, cmd, delay):
-    Stdin(con)
-    Stdout(con)
+    SockWriter(con)
+    SockReader(con)
     Terminator(con)
     Irc(con)
     logcon(con)
 
-    def do_job(spin, *args):
+    def do_job(ssock, *args):
         for ind in cmd:
-            send_cmd(spin, ind)
+            send_cmd(ssock, ind)
             sleep(delay)
     
-    xmap(con, '376', do_job)
-    xmap(con, 'PING', lambda con, prefix, 
+    con.add_map('376', do_job)
+    con.add_map('PING', lambda con, prefix, 
             servaddr: send_cmd(con, 'PONG :%s' % servaddr))
 
-    xmap(con, CLOSE, lambda con, err: lose(con))
+    con.add_map(CLOSE, lambda con, err: lose(con))
     send_cmd(con, 'NICK %s' % nick)
     send_cmd(con, 'USER %s' % user)
 
 def main(address, port, nick, user, cmd, delay=1):
     sock = socket(AF_INET, SOCK_STREAM)
-    con  = Spin(sock)
+    con  = SuperSocket(sock)
     
     Client(con)
     con.connect_ex((address, port))
-    xmap(con, CONNECT, send_auth, nick, user, cmd, delay)
+    con.add_map(CONNECT, send_auth, nick, user, cmd, delay)
     return con
 
 if __name__ == '__main__':
